@@ -234,7 +234,7 @@ def main():
                 st.session_state['tools'] = NFLTeamTools(list(range(start_date, end_date + 1)))
 
     # Define the available tabs
-    tabs = ['Probability Tools', 'Rushing & Receiving Tools', 'Wager Tools', 'Machine Learning Tools (Coming Soon)']
+    tabs = ['Probability Tools', 'Rushing & Receiving Tools', 'Wager Tools', 'Machine Learning Tools']
     tab1, tabtp, tab2, tab3 = st.tabs(tabs)
   
     with tab1:
