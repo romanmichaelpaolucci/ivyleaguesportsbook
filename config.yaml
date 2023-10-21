@@ -1,0 +1,16 @@
+credentials:
+  usernames:
+    rpaolucci:
+      email: romanmichaelpaolucci@gmail.com
+      name: Roman Paolucci
+      password: $2b$12$Y8rfCYDQSCESexoBCIadFe/nmjXK6rdIuO9LjoCwHDAV5SCU7dcE.
+    rbriggs:
+      email: joe@alpha.com
+      name: Joe
+      password: $2b$12$OWE4kmXTt.zVx2aIrxquZOiRqKlWOViRB05xQZVvmOUJ4xwr.1VFa # To be replaced with hashed password
+cookie:
+  expiry_days: 30
+  key: KMKLFNDOKSNICLMFOPDMSPOIFMPIOEMWIOCMDSF # Must be string
+  name: basic_cookie
+preauthorized:
+  emails:
