@@ -1,8 +1,10 @@
-nfl_team_tools==0.3.1
+nfl_team_tools
 ipykernel
-matplotlib==3.6.2
-numpy==1.23.1
-ipywidgets==8.0.6
-scipy==1.8.1
-ipython==8.4.0
-pandas==2.1.1
+matplotlib
+numpy
+ipywidgets
+scipy
+ipython
+pandas
+streamlit_authenticator
+streamlit
