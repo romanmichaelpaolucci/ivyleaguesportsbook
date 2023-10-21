@@ -26,7 +26,7 @@ import nfl_data_py as nfl # nfl_data_py-0.3.1.tar.gz
 import matplotlib.pyplot as plt
 import numpy as np
 from scipy import stats
-from streamlit_authenticator import Authenticate
+
 
 class NFLTeamTools:
     
@@ -174,247 +174,220 @@ class NFLTeamTools:
     def __init__(self, years):
         self.data = nfl.import_pbp_data(years)
 
-with open('config.yaml') as file:
-    config = yaml.load(file, Loader=SafeLoader)
 
-authenticator = Authenticate(
-    config['credentials'],
-    config['cookie']['name'],
-    config['cookie']['key'],
-    config['cookie']['expiry_days'],
-    config['preauthorized']
-)
+# Initialize Streamlit session state if it's not already initialized
+if 'session_state' not in st.session_state:
+    current_year = datetime.now().year
+    st.session_state['session_state'] = {'start_date': current_year, 'end_date': current_year, 'display_date': str(current_year)}
+    st.session_state['tools'] = NFLTeamTools([current_year])
 
-# hashing passwords
-#import streamlit_authenticator as stauth
-#hashed_passwords = stauth.Hasher(['', 'password']).generate()
-#hashed_passwords
-
-name, authentication_status, username = authenticator.login('Login', 'main')
-
-if authentication_status:
-    authenticator.logout('Logout', 'main')
+def main():
+    st.title('NFL Probability Dashboard')
     
-    st.write(f'Welcome *{name}*')
+    # Create a placeholder for the header
+    header_placeholder = st.empty()
+
+    # Populate it with the initial data range
+    header_placeholder.markdown('<h1 id="headerID">Data for: ' + st.session_state['session_state']['display_date'] + '</h1>', unsafe_allow_html=True)
     
-    # Initialize Streamlit session state if it's not already initialized
-    if 'session_state' not in st.session_state:
-        current_year = datetime.now().year
-        st.session_state['session_state'] = {'start_date': current_year, 'end_date': current_year, 'display_date': str(current_year)}
-        st.session_state['tools'] = NFLTeamTools([current_year])
-    
-    def main():
-        st.title('NFL Probability Dashboard')
-        
-        # Create a placeholder for the header
-        header_placeholder = st.empty()
+    # Sidebar for Date Range Selector with Dropdowns
+    st.sidebar.header("Date Range Selector")
+    start_year_options = list(range(2018, 2024))
+    end_year_options = list(range(2018, 2024))
 
-        # Populate it with the initial data range
-        header_placeholder.markdown('<h1 id="headerID">Data for: ' + st.session_state['session_state']['display_date'] + '</h1>', unsafe_allow_html=True)
-        
-        # Sidebar for Date Range Selector with Dropdowns
-        st.sidebar.header("Date Range Selector")
-        start_year_options = list(range(2018, 2024))
-        end_year_options = list(range(2018, 2024))
+    start_date = st.sidebar.selectbox("Start Year", start_year_options, index=0)
+    end_date = st.sidebar.selectbox("End Year", end_year_options, index=len(end_year_options) - 1)
 
-        start_date = st.sidebar.selectbox("Start Year", start_year_options, index=0)
-        end_date = st.sidebar.selectbox("End Year", end_year_options, index=len(end_year_options) - 1)
+    submit_clicked = st.sidebar.button('Submit')
 
-        submit_clicked = st.sidebar.button('Submit')
-
-        if submit_clicked:
-            if st.session_state['session_state']['start_date'] != start_date or st.session_state['session_state']['end_date'] != end_date:
-                # Update session state
-                st.session_state['session_state']['start_date'] = start_date
-                st.session_state['session_state']['end_date'] = end_date
-                
-                # Update display date
-                if start_date == end_date:
-                    st.session_state['session_state']['display_date'] = str(start_date)
-                else:
-                    st.session_state['session_state']['display_date'] = f"{start_date}-{end_date}"
-
-                # Update header using placeholder
-                header_placeholder.markdown('<h1 id="headerID">Data for: ' + st.session_state['session_state']['display_date'] + '</h1>', unsafe_allow_html=True)
-
-                # Update tools variable with new data
-                if start_date == end_date:
-                    st.session_state['tools'] = NFLTeamTools([start_date])
-                else:
-                    st.session_state['tools'] = NFLTeamTools(list(range(start_date, end_date + 1)))
-
-        # Define the available tabs
-        tabs = ['Probability Tools', 'Rushing & Receiving Tools', 'Wager Tools', 'Machine Learning Tools (Coming Soon)']
-        tab1, tabtp, tab2, tab3 = st.tabs(tabs)
-
-        with tab1:
-            probability_view()
+    if submit_clicked:
+        if st.session_state['session_state']['start_date'] != start_date or st.session_state['session_state']['end_date'] != end_date:
+            # Update session state
+            st.session_state['session_state']['start_date'] = start_date
+            st.session_state['session_state']['end_date'] = end_date
             
-        with tabtp:
-            rushing_and_receiving_view()
+            # Update display date
+            if start_date == end_date:
+                st.session_state['session_state']['display_date'] = str(start_date)
+            else:
+                st.session_state['session_state']['display_date'] = f"{start_date}-{end_date}"
 
-        with tab2:
-            wagers_view()
+            # Update header using placeholder
+            header_placeholder.markdown('<h1 id="headerID">Data for: ' + st.session_state['session_state']['display_date'] + '</h1>', unsafe_allow_html=True)
 
-        with tab3:
-            machine_learning_view()
+            # Update tools variable with new data
+            if start_date == end_date:
+                st.session_state['tools'] = NFLTeamTools([start_date])
+            else:
+                st.session_state['tools'] = NFLTeamTools(list(range(start_date, end_date + 1)))
 
-    def rushing_and_receiving_view():
-        st.header('Rushing & Receiving Tools')
+    # Define the available tabs
+    tabs = ['Probability Tools', 'Rushing & Receiving Tools', 'Wager Tools', 'Machine Learning Tools (Coming Soon)']
+    tab1, tabtp, tab2, tab3 = st.tabs(tabs)
+  
+    with tab1:
+        probability_view()
         
-        # Generate tables with your code (replace this with your actual code)
-        top_player_receiving_yards_df = st.session_state['tools'].get_top_receivers().dropna()  # Replace with your actual data
-        top_player_rushing_yards_df = st.session_state['tools'].get_top_rushers().dropna()  # Replace with your actual data
-        
-        # Adding search and filter functionality for "Top Player Receiving Yards" table
-        st.subheader("Player Receiving Yards")
-        filter_text_receiving = st.text_input("Search and filter (Receiving Yards):", key='receiving_filter')
-        filtered_receiving_df = top_player_receiving_yards_df[
-            top_player_receiving_yards_df.apply(lambda row: row.astype(str).str.contains(filter_text_receiving).any(), axis=1)]
-        st.dataframe(filtered_receiving_df)
-        
-        st.write("---")  # Optional horizontal line for better separation
+    with tabtp:
+        rushing_and_receiving_view()
+  
+    with tab2:
+        wagers_view()
+  
+    with tab3:
+        machine_learning_view()
 
-        # Adding search and filter functionality for "Top Player Rushing Yards" table
-        st.subheader("Player Rushing Yards")
-        filter_text_rushing = st.text_input("Search and filter (Rushing Yards):", key='rushing_filter')
-        filtered_rushing_df = top_player_rushing_yards_df[
-            top_player_rushing_yards_df.apply(lambda row: row.astype(str).str.contains(filter_text_rushing).any(), axis=1)]
-        st.dataframe(filtered_rushing_df)
+def rushing_and_receiving_view():
+    st.header('Rushing & Receiving Tools')
+    
+    # Generate tables with your code (replace this with your actual code)
+    top_player_receiving_yards_df = st.session_state['tools'].get_top_receivers().dropna()  # Replace with your actual data
+    top_player_rushing_yards_df = st.session_state['tools'].get_top_rushers().dropna()  # Replace with your actual data
+    
+    # Adding search and filter functionality for "Top Player Receiving Yards" table
+    st.subheader("Player Receiving Yards")
+    filter_text_receiving = st.text_input("Search and filter (Receiving Yards):", key='receiving_filter')
+    filtered_receiving_df = top_player_receiving_yards_df[
+        top_player_receiving_yards_df.apply(lambda row: row.astype(str).str.contains(filter_text_receiving).any(), axis=1)]
+    st.dataframe(filtered_receiving_df)
+    
+    st.write("---")  # Optional horizontal line for better separation
 
-    def probability_view():
-        st.header('Probability View')
-        
-        df = st.session_state['tools'].data
-        unique_home_teams = pd.unique(df['home_team'])
-        unique_away_teams = pd.unique(df['away_team'])
-        
-        all_unique_teams = list(set(unique_home_teams) | set(unique_away_teams))
-        
-        col1, col2 = st.columns(2)
-        selected_home_team = col1.selectbox("Select Home Team", sorted(all_unique_teams))
-        selected_away_team = col2.selectbox("Select Away Team", sorted(all_unique_teams))
-        
-        home_winloss = st.session_state['tools'].compute_winloss(selected_home_team, True)
-        away_winloss = st.session_state['tools'].compute_winloss(selected_away_team, False)
-        
-        total_home_games = home_winloss['win'] + home_winloss['loss']
-        total_away_games = away_winloss['win'] + away_winloss['loss']
-        
-        home_win_prob = home_winloss['win'] / total_home_games
-        home_loss_prob = home_winloss['loss'] / total_home_games
-        
-        away_win_prob = away_winloss['win'] / total_away_games
-        away_loss_prob = away_winloss['loss'] / total_away_games
-        
-        chart_col1, chart_col2 = st.columns(2)
-        
-        with chart_col1:
-            st.subheader(f'Win/Loss Probability for {selected_home_team} (Home) [Total Games: {total_home_games}]')
-            st.bar_chart({'Win': [home_win_prob], 'Loss': [home_loss_prob]})
-            
-        with chart_col2:
-            st.subheader(f'Win/Loss Probability for {selected_away_team} (Away) [Total Games: {total_away_games}]')
-            st.bar_chart({'Win': [away_win_prob], 'Loss': [away_loss_prob]})
-        
-        # New Section: Spread Over Value Probability
-        st.subheader("Spread Over Value Probability")
-        
-        # Get spreads for selected teams using compute_spread
-        home_spread = st.session_state['tools'].compute_spread(selected_home_team, True)
-        away_spread = st.session_state['tools'].compute_spread(selected_away_team, False)
-        
-        # Create a slider to set the value against which the spread is compared
-        spread_value = st.slider("Spread Value", min_value=0, max_value=50, value=0)
-        
-        # Create columns for side-by-side bar charts
-        spread_chart_col1, spread_chart_col2 = st.columns(2)
+    # Adding search and filter functionality for "Top Player Rushing Yards" table
+    st.subheader("Player Rushing Yards")
+    filter_text_rushing = st.text_input("Search and filter (Rushing Yards):", key='rushing_filter')
+    filtered_rushing_df = top_player_rushing_yards_df[
+        top_player_rushing_yards_df.apply(lambda row: row.astype(str).str.contains(filter_text_rushing).any(), axis=1)]
+    st.dataframe(filtered_rushing_df)
 
-        # Calculate probabilities of the spread being over the specified value
-        home_win_over_prob = sum(1 for x in home_spread['win'] if x > spread_value) / len(home_spread['win']) if len(home_spread['win']) > 0 else 0
-        home_loss_over_prob = sum(1 for x in home_spread['loss'] if x > spread_value) / len(home_spread['loss']) if len(home_spread['loss']) > 0 else 0
-        away_win_over_prob = sum(1 for x in away_spread['win'] if x > spread_value) / len(away_spread['win']) if len(away_spread['win']) > 0 else 0
-        away_loss_over_prob = sum(1 for x in away_spread['loss'] if x > spread_value) / len(away_spread['loss']) if len(away_spread['loss']) > 0 else 0
-
-        # Create a bar chart for home team probabilities
-        with spread_chart_col1:
-            st.subheader(f'Spread Over Probabilities for {selected_home_team} (Home)')
-            st.bar_chart({
-                'Win Over': [home_win_over_prob], 
-                'Loss Over': [home_loss_over_prob]
-            })
-
-        # Create a bar chart for away team probabilities
-        with spread_chart_col2:
-            st.subheader(f'Spread Over Probabilities for {selected_away_team} (Away)')
-            st.bar_chart({
-                'Win Over': [away_win_over_prob], 
-                'Loss Over': [away_loss_over_prob]
-            })
-
-    def wagers_view():
-        st.header('3 Pick Parlay Wager Tool')
-        # Three sliders for probabilities side by side
-        col1, col2, col3 = st.columns(3)
+def probability_view():
+    st.header('Probability View')
+    
+    df = st.session_state['tools'].data
+    unique_home_teams = pd.unique(df['home_team'])
+    unique_away_teams = pd.unique(df['away_team'])
+    
+    all_unique_teams = list(set(unique_home_teams) | set(unique_away_teams))
+    
+    col1, col2 = st.columns(2)
+    selected_home_team = col1.selectbox("Select Home Team", sorted(all_unique_teams))
+    selected_away_team = col2.selectbox("Select Away Team", sorted(all_unique_teams))
+    
+    home_winloss = st.session_state['tools'].compute_winloss(selected_home_team, True)
+    away_winloss = st.session_state['tools'].compute_winloss(selected_away_team, False)
+    
+    total_home_games = home_winloss['win'] + home_winloss['loss']
+    total_away_games = away_winloss['win'] + away_winloss['loss']
+    
+    home_win_prob = home_winloss['win'] / total_home_games
+    home_loss_prob = home_winloss['loss'] / total_home_games
+    
+    away_win_prob = away_winloss['win'] / total_away_games
+    away_loss_prob = away_winloss['loss'] / total_away_games
+    
+    chart_col1, chart_col2 = st.columns(2)
+    
+    with chart_col1:
+        st.subheader(f'Win/Loss Probability for {selected_home_team} (Home) [Total Games: {total_home_games}]')
+        st.bar_chart({'Win': [home_win_prob], 'Loss': [home_loss_prob]})
         
-        with col1:
-            prob1 = st.slider('Probability 1', min_value=0.0, max_value=1.0, value=0.7, step=0.01)
-        with col2:
-            prob2 = st.slider('Probability 2', min_value=0.0, max_value=1.0, value=0.7, step=0.01)
-        with col3:
-            prob3 = st.slider('Probability 3', min_value=0.0, max_value=1.0, value=0.7, step=0.01)
+    with chart_col2:
+        st.subheader(f'Win/Loss Probability for {selected_away_team} (Away) [Total Games: {total_away_games}]')
+        st.bar_chart({'Win': [away_win_prob], 'Loss': [away_loss_prob]})
+    
+    # New Section: Spread Over Value Probability
+    st.subheader("Spread Over Value Probability")
+    
+    # Get spreads for selected teams using compute_spread
+    home_spread = st.session_state['tools'].compute_spread(selected_home_team, True)
+    away_spread = st.session_state['tools'].compute_spread(selected_away_team, False)
+    
+    # Create a slider to set the value against which the spread is compared
+    spread_value = st.slider("Spread Value", min_value=0, max_value=50, value=0)
+    
+    # Create columns for side-by-side bar charts
+    spread_chart_col1, spread_chart_col2 = st.columns(2)
 
-        # Three textboxes for Parlays, Odds, and Wager side by side
-        col4, col5, col6 = st.columns(3)
-        
-        with col4:
-            parlays = st.text_input('Parlays', '3')
-        with col5:
-            odds = st.text_input('Odds', '+100')
-        with col6:
-            wager = st.text_input('Wager', '100')
+    # Calculate probabilities of the spread being over the specified value
+    home_win_over_prob = sum(1 for x in home_spread['win'] if x > spread_value) / len(home_spread['win']) if len(home_spread['win']) > 0 else 0
+    home_loss_over_prob = sum(1 for x in home_spread['loss'] if x > spread_value) / len(home_spread['loss']) if len(home_spread['loss']) > 0 else 0
+    away_win_over_prob = sum(1 for x in away_spread['win'] if x > spread_value) / len(away_spread['win']) if len(away_spread['win']) > 0 else 0
+    away_loss_over_prob = sum(1 for x in away_spread['loss'] if x > spread_value) / len(away_spread['loss']) if len(away_spread['loss']) > 0 else 0
 
-        if parlays and odds and wager:
-            parlays = int(parlays)
-            odds = float(odds.replace('+', ''))  # Remove the '+' sign if it's there
-            wager = float(wager)
+    # Create a bar chart for home team probabilities
+    with spread_chart_col1:
+        st.subheader(f'Spread Over Probabilities for {selected_home_team} (Home)')
+        st.bar_chart({
+            'Win Over': [home_win_over_prob], 
+            'Loss Over': [home_loss_over_prob]
+        })
 
-            # Convert American odds to decimal
-            decimal_odds = odds / 100 + 1
+    # Create a bar chart for away team probabilities
+    with spread_chart_col2:
+        st.subheader(f'Spread Over Probabilities for {selected_away_team} (Away)')
+        st.bar_chart({
+            'Win Over': [away_win_over_prob], 
+            'Loss Over': [away_loss_over_prob]
+        })
 
-            # Combined probability of winning a single parlay
-            combined_prob = prob1 * prob2 * prob3
+def wagers_view():
+    st.header('3 Pick Parlay Wager Tool')
+    # Three sliders for probabilities side by side
+    col1, col2, col3 = st.columns(3)
+    
+    with col1:
+        prob1 = st.slider('Probability 1', min_value=0.0, max_value=1.0, value=0.7, step=0.01)
+    with col2:
+        prob2 = st.slider('Probability 2', min_value=0.0, max_value=1.0, value=0.7, step=0.01)
+    with col3:
+        prob3 = st.slider('Probability 3', min_value=0.0, max_value=1.0, value=0.7, step=0.01)
 
-            # Generate profit data based on the binomial distribution
-            x = range(parlays + 1)  # Number of successes
-            y = [binom.pmf(k, parlays, combined_prob) for k in x]  # Probability of k successes
+    # Three textboxes for Parlays, Odds, and Wager side by side
+    col4, col5, col6 = st.columns(3)
+    
+    with col4:
+        parlays = st.text_input('Parlays', '3')
+    with col5:
+        odds = st.text_input('Odds', '+100')
+    with col6:
+        wager = st.text_input('Wager', '100')
 
-            profit = []
-            for k in x:
-                profit.append((k * (wager * decimal_odds)) - ((parlays - k) * wager))
+    if parlays and odds and wager:
+        parlays = int(parlays)
+        odds = float(odds.replace('+', ''))  # Remove the '+' sign if it's there
+        wager = float(wager)
 
-            # Create a DataFrame to hold the data
-            df = pd.DataFrame({
-                'Successes': x,
-                'Profit': profit,
-                'Probability': y
-            })
+        # Convert American odds to decimal
+        decimal_odds = odds / 100 + 1
 
-            # Create the bar chart with axis labels
-            chart = st.bar_chart(df.set_index('Successes')['Profit'], use_container_width=True)
-            st.write("X-axis: Number of Successes, Y-axis: Profit")
+        # Combined probability of winning a single parlay
+        combined_prob = prob1 * prob2 * prob3
 
-            # Show the probability when hovering (serves as a hover-over tooltip alternative)
-            st.table(df)
-        
-    def machine_learning_view():
-        st.header('Machine Learning View')
-        st.write('This is where you can integrate machine learning models to generate probabilities.')
+        # Generate profit data based on the binomial distribution
+        x = range(parlays + 1)  # Number of successes
+        y = [binom.pmf(k, parlays, combined_prob) for k in x]  # Probability of k successes
 
-    if __name__ == '__main__':
-        main()
+        profit = []
+        for k in x:
+            profit.append((k * (wager * decimal_odds)) - ((parlays - k) * wager))
 
-elif authentication_status == False:
-    st.error('Username/password is incorrect')
-elif authentication_status == None:
-    st.warning('Please enter your username and password')
+        # Create a DataFrame to hold the data
+        df = pd.DataFrame({
+            'Successes': x,
+            'Profit': profit,
+            'Probability': y
+        })
+
+        # Create the bar chart with axis labels
+        chart = st.bar_chart(df.set_index('Successes')['Profit'], use_container_width=True)
+        st.write("X-axis: Number of Successes, Y-axis: Profit")
+
+        # Show the probability when hovering (serves as a hover-over tooltip alternative)
+        st.table(df)
+    
+def machine_learning_view():
+    st.header('Machine Learning View')
+    st.write('This is where you can integrate machine learning models to generate probabilities.')
+
+if __name__ == '__main__':
+    main()
