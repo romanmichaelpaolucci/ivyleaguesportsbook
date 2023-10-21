@@ -196,7 +196,7 @@ def main():
     end_year_options = list(range(2018, 2024))
     st.sidebar.header('About Me')
     # Display profile picture
-    st.sidebar.image("profile_picture.png", caption='Roman Paolucci, Quant Researcher', use_column_width=True)
+    st.sidebar.image("roman.jpeg", caption='Roman Paolucci, Quant Researcher', use_column_width=True)
     # Text description
     st.sidebar.markdown("""
         Hi there! I'm a Columbia engineering student interested in developing a set of probability tools to aid in optimal betting on NFL. The tools are free to use for now so enjoy!
