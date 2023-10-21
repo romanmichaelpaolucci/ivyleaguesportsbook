@@ -1,5 +1,5 @@
 nfl_data_py
-sklearn
+scikitlearn
 ipykernel
 matplotlib
 numpy
