@@ -196,8 +196,8 @@ def main():
     
     # Sidebar for Date Range Selector with Dropdowns
     st.sidebar.header("Date Range Selector")
-    start_year_options = list(range(2018, 2024))
-    end_year_options = list(range(2018, 2024))
+    start_year_options = list(range(2021, 2024))
+    end_year_options = list(range(2021, 2024))
 
     start_date = st.sidebar.selectbox("Start Year", start_year_options, index=0)
     end_date = st.sidebar.selectbox("End Year", end_year_options, index=len(end_year_options) - 1)
