@@ -194,6 +194,13 @@ def main():
     st.sidebar.header("Date Range Selector")
     start_year_options = list(range(2018, 2024))
     end_year_options = list(range(2018, 2024))
+    st.sidebar.header('About Me')
+    # Display profile picture
+    st.sidebar.image("profile_picture.png", caption='Roman Paolucci, Quant Researcher', use_column_width=True)
+    # Text description
+    st.sidebar.markdown("""
+        Hi there! I'm a Columbia engineering student interested in developing a set of probability tools to aid in optimal betting on NFL. The tools are free to use for now so enjoy!
+    """)
 
     start_date = st.sidebar.selectbox("Start Year", start_year_options, index=0)
     end_date = st.sidebar.selectbox("End Year", end_year_options, index=len(end_year_options) - 1)
