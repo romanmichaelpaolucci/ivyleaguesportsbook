@@ -1,4 +1,4 @@
-nfl-team-tools
+nfl_data_py
 ipykernel
 matplotlib
 numpy
