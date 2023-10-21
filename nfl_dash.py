@@ -7,10 +7,15 @@ import pandas as pd
 import numpy as np
 from scipy import stats
 from scipy.stats import binom
+from sklearn.metrics import accuracy_score, log_loss, confusion_matrix
+import re
 from scipy import stats
 import ssl
 import yaml
 from yaml.loader import SafeLoader
+from sklearn.svm import SVC
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import mean_squared_error
 
 # Ignore SSL
 try:
@@ -174,7 +179,6 @@ class NFLTeamTools:
     def __init__(self, years):
         self.data = nfl.import_pbp_data(years)
 
-
 # Initialize Streamlit session state if it's not already initialized
 if 'session_state' not in st.session_state:
     current_year = datetime.now().year
@@ -199,11 +203,11 @@ def main():
     end_date = st.sidebar.selectbox("End Year", end_year_options, index=len(end_year_options) - 1)
 
     submit_clicked = st.sidebar.button('Submit')
-
+    
     st.sidebar.header('About Me')
     # Display profile picture
     st.sidebar.image("roman.jpeg", caption='Roman Paolucci, Columbia MS Student', use_column_width=True)
-    # Text description
+        # Text description
     st.sidebar.markdown("""
         Hi there! I'm a Columbia engineering student developing a set of probability tools to aid in optimal betting on NFL games. The tools are free to use for now so enjoy!
     """)
@@ -246,11 +250,11 @@ def main():
         machine_learning_view()
 
 def rushing_and_receiving_view():
-    st.header('Rushing & Receiving Tools')
+    st.header('Rushing & Receiving Tools (Play by Play)')
     
     # Generate tables with your code (replace this with your actual code)
-    top_player_receiving_yards_df = st.session_state['tools'].get_top_receivers().dropna()  # Replace with your actual data
-    top_player_rushing_yards_df = st.session_state['tools'].get_top_rushers().dropna()  # Replace with your actual data
+    top_player_receiving_yards_df = st.session_state['tools'].get_top_receivers()  # Replace with your actual data
+    top_player_rushing_yards_df = st.session_state['tools'].get_top_rushers()  # Replace with your actual data
     
     # Adding search and filter functionality for "Top Player Receiving Yards" table
     st.subheader("Player Receiving Yards")
@@ -393,9 +397,79 @@ def wagers_view():
         # Show the probability when hovering (serves as a hover-over tooltip alternative)
         st.table(df)
     
+def parse_wind(weather_str):
+    # Extract wind speed from weather string
+    try:
+        wind_speed = int(weather_str.split('Wind:')[-1].split()[1])
+    except:
+        return 0 # assume zero windspeed if not recorder (indoors)
+    return wind_speed    
+
 def machine_learning_view():
-    st.header('Machine Learning View')
-    st.write('This is where you can integrate machine learning models to generate probabilities.')
+    df = st.session_state['tools'].data[['kick_distance', 'field_goal_result', 'weather']].dropna()
+    df = df[df['field_goal_result'].isin(["made", "missed"])]
+    
+    st.title("Field Goal Prediction with Support Vector Classifier")
+    
+    st.text("Research Question: Does wind have a significant impact on field goal completion?")
+
+    # Convert 'made' to 1 and 'missed' to 0
+    df = df[df['field_goal_result'].isin(['made', 'missed'])]
+    df['weather'] = df['weather'].apply(parse_wind)
+    df['wind'] = df['weather']
+    df['field_goal_result'] = df['field_goal_result'].map({'made': 1, 'missed': 0})
+
+    # Add a slider for minimum kick distance
+    min_kick_distance = st.slider("Minimum Kick Distance", 0, 60, value=0)
+    filtered_df = df[df['kick_distance'] >= min_kick_distance]
+
+    # Prepare data for both models
+    X_with_wind = filtered_df[['kick_distance', 'wind']]
+    X_no_wind = filtered_df[['kick_distance']]
+    y = filtered_df['field_goal_result']
+
+    # Train-Test Split for both models
+    X_train_with_wind, X_test_with_wind, y_train, y_test = train_test_split(X_with_wind, y, test_size=0.2, random_state=42)
+    X_train_no_wind, X_test_no_wind = train_test_split(X_no_wind, test_size=0.2, random_state=42)
+
+    # Model Training with Loading Spinner
+    with st.spinner('Training Models...'):
+        # With Wind
+        model_with_wind = SVC(probability=True)
+        model_with_wind.fit(X_train_with_wind, y_train)
+        accuracy_with_wind = accuracy_score(y_test, model_with_wind.predict(X_test_with_wind))
+
+        # Without Wind
+        model_no_wind = SVC(probability=True)
+        model_no_wind.fit(X_train_no_wind, y_train)
+        accuracy_no_wind = accuracy_score(y_test, model_no_wind.predict(X_test_no_wind))
+
+    # Display Accuracy
+    col1, col2 = st.columns(2)
+    with col1:
+        st.bar_chart({'Accuracy with Wind': [accuracy_with_wind]}, use_container_width=True)
+    with col2:
+        st.bar_chart({'Accuracy without Wind': [accuracy_no_wind]}, use_container_width=True)
+
+    # Scatter Plot
+    st.subheader("Scatter Plot")
+    plt.scatter(X_with_wind['kick_distance'], X_with_wind['wind'], c=y, cmap='coolwarm')
+    plt.xlabel("Kick Distance")
+    plt.ylabel("Wind")
+    plt.colorbar(label='Field Goal Made (1) or Missed (0)')
+    st.pyplot(plt)
+
+    # Display Data Table with filters
+    st.subheader('Data Table')
+    cols_to_show = ["field_goal_result", "kick_distance", "wind"]
+    table_filter = st.selectbox("Filter by Field Goal Result", ["All", "Made", "Missed"])
+    if table_filter == "All":
+        st.write(filtered_df[cols_to_show])
+    elif table_filter == "Made":
+        st.write(filtered_df[filtered_df['field_goal_result'] == 1][cols_to_show])
+    else:
+        st.write(filtered_df[filtered_df['field_goal_result'] == 0][cols_to_show])
+
 
 if __name__ == '__main__':
     main()
